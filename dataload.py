@@ -33,6 +33,7 @@ testloader = torch.utils.data.DataLoader(testset, batch_size=100, shuffle=False,
 # Model
 print('==> Building model..')
 net = models.mobilenet_v2()
+net.cuda()
 
 #train_process
 loss_function = nn.CrossEntropyLoss()
