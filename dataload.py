@@ -36,7 +36,7 @@ net = models.mobilenet_v2()
 net.cuda()
 
 #train_process
-loss_function = nn.CrossEntropyLoss()
+criterion = nn.CrossEntropyLoss()
 optimizer = optim.SGD(net.parameters(),lr=0.001, momentum=0.9, weight_decay=5e-4)
 
 def train(epoch):
