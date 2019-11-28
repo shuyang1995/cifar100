@@ -4,6 +4,7 @@ import torchvision.transforms as transforms
 import torchvision.models as models
 import torch.nn as nn
 import torch.optim as optim
+from utils import progress_bar
 
 device = 'cuda' if torch.cuda.is_available() else 'cpu'
 best_acc = 0  # best test accuracy
