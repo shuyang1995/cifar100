@@ -21,7 +21,14 @@ testset = torchvision.datasets.CIFAR100(root='./data', train=False, download=Tru
 testloader = torch.utils.data.DataLoader(testset, batch_size=100, shuffle=True, num_workers=2)
 
 #Model download
+net = MobileNetV2()
+net = net.to(device)
+print('==> Resuming from checkpoint..')
+assert os.path.isdir('checkpoint'), 'Error: no checkpoint directory found!'
+checkpoint = torch.load('./checkpoint/ckpt.pth')
+net.load_state_dict(checkpoint['net'])
+best_acc = checkpoint['acc']
+start_epoch = checkpoint['epoch']
 
-net = torch.hub.load('pytorch/vision:v0.4.2', 'mobilenet_v2', pretrained=True)
-net = net.cuda()
 print(net)
+#
