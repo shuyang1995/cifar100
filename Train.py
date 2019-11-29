@@ -40,7 +40,7 @@ net.cuda()
 #train_process
 criterion = nn.CrossEntropyLoss()
 optimizer = optim.SGD(net.parameters(),lr=0.001, momentum=0.9, weight_decay=5e-4)
-train_scheduler = optim.lr_scheduler.MultiStepLR(optimizer, milestones=settings.MILESTONES, gamma=0.2)
+train_scheduler = optim.lr_scheduler.MultiStepLR(optimizer, milestones=[60, 120, 160], gamma=0.2)
 
 def train(epoch):
     print('\nEpoch: %d' % epoch)
