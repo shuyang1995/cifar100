@@ -47,7 +47,7 @@ for n_iter, (image, label) in enumerate(testloader):
         correct_5 += correct[:, :5].sum()
         #compute top1
         correct_1 += correct[:, :1].sum()
-    print()
-    print("Top 1 err: ", 1 - correct_1 / len(testloader.dataset))
-    print("Top 5 err: ", 1 - correct_5 / len(testloader.dataset))
-    print("Parameter numbers: {}".format(sum(p.numel() for p in net.parameters())))
+print()
+print("Top 1 err: ", 1 - correct_1 / len(testloader.dataset))
+print("Top 5 err: ", 1 - correct_5 / len(testloader.dataset))
+print("Parameter numbers: {}".format(sum(p.numel() for p in net.parameters())))
