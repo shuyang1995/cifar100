@@ -5,7 +5,7 @@ import torchvision.models as models
 import torch.nn as nn
 import torch.optim as optim
 from utils import progress_bar
-from models import mobilenetv2
+from myModels import mobilenetv2
 import os
 
 device = 'cuda' if torch.cuda.is_available() else 'cpu'
