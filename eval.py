@@ -6,7 +6,6 @@ import torch.nn as nn
 import torch.optim as optim
 from utils import progress_bar
 import os
-from models.mobilenetv2 import mobilenetv2
 
 device = 'cuda' if torch.cuda.is_available() else 'cpu'
 
