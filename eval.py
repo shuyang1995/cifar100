@@ -29,5 +29,25 @@ net.load_state_dict(checkpoint['net'])
 best_acc = checkpoint['acc']
 start_epoch = checkpoint['epoch']
 
-print(net)
-#
+#print(net)
+#eval:
+net.eval()
+correct_1 = 0.0
+correct_5 = 0.0
+total = 0
+for n_iter, (image, label) in enumerate(testloader):
+        print("iteration: {}\ttotal {} iterations".format(n_iter + 1, len(testloader)))
+        image = Variable(image).cuda()
+        label = Variable(label).cuda()
+        output = net(image)
+        _, pred = output.topk(5, 1, largest=True, sorted=True)
+        label = label.view(label.size(0), -1).expand_as(pred)
+        correct = pred.eq(label).float()
+        #compute top 5
+        correct_5 += correct[:, :5].sum()
+        #compute top1
+        correct_1 += correct[:, :1].sum()
+    print()
+    print("Top 1 err: ", 1 - correct_1 / len(testloader.dataset))
+    print("Top 5 err: ", 1 - correct_5 / len(testloader.dataset))
+    print("Parameter numbers: {}".format(sum(p.numel() for p in net.parameters())))
