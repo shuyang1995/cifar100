@@ -3,7 +3,7 @@ import torchvision
 import torchvision.transforms as transforms
 import torchvision.models as models
 import torch.nn as nn
-import torch.optim as optim
+from torch.autograd import Variable
 from utils import progress_bar
 import os
 
@@ -35,7 +35,7 @@ net.eval()
 correct_1 = 0.0
 correct_5 = 0.0
 total = 0
-for n_iter, (image, label) in enumerate(testloader):
+for n_iter, (inputs, targets) in enumerate(testloader):
         print("iteration: {}\ttotal {} iterations".format(n_iter + 1, len(testloader)))
         image = Variable(image).cuda()
         label = Variable(label).cuda()
