@@ -5,7 +5,7 @@ import torchvision.models as models
 import torch.nn as nn
 import torch.optim as optim
 from utils import progress_bar
-from myModels import mobilenetv2
+import myModels
 import os
 
 device = 'cuda' if torch.cuda.is_available() else 'cpu'
@@ -35,7 +35,7 @@ testloader = torch.utils.data.DataLoader(testset, batch_size=100, shuffle=False,
 
 # Model
 print('==> Building model..')
-net = mobilenetv2()
+net = myModels.mobilenetv2()
 net.cuda()
 
 #train_process
