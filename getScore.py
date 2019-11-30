@@ -3,6 +3,7 @@ import torchvision
 import torchvision.transforms as transforms
 import torchvision.models as models
 import torch.nn as nn
+import myModels
 from torch.autograd import Variable
 from utils import progress_bar
 import os
@@ -21,7 +22,7 @@ testset = torchvision.datasets.CIFAR100(root='./data', train=False, download=Tru
 testloader = torch.utils.data.DataLoader(testset, batch_size=100, shuffle=True, num_workers=2)
 
 #Model download
-net = models.MobileNetV2()
+net = myModels.MobileNetV2()
 net = net.to(device)
 print('==> Resuming from checkpoint..')
 assert os.path.isdir('checkpoint'), 'Error: no checkpoint directory found!'
