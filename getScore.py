@@ -41,6 +41,8 @@ total = 0
 res = {}
 
 for n_iter, (image, label) in enumerate(testloader):
+        if n_iter > 300:
+            break
         print("iteration: {}\ttotal {} iterations".format(n_iter + 1, len(testloader)))
         image = Variable(image).cuda()
         label = Variable(label).cuda()
