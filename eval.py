@@ -5,6 +5,7 @@ import torchvision.models as models
 import torch.nn as nn
 from torch.autograd import Variable
 from utils import progress_bar
+import myModels
 import os
 
 device = 'cuda' if torch.cuda.is_available() else 'cpu'
@@ -20,7 +21,7 @@ testset = torchvision.datasets.CIFAR100(root='./data', train=False, download=Tru
 testloader = torch.utils.data.DataLoader(testset, batch_size=100, shuffle=True, num_workers=2)
 
 #Model download
-net = models.MobileNetV2()
+net = myModels.mobilenetv2()
 net = net.to(device)
 print('==> Resuming from checkpoint..')
 assert os.path.isdir('checkpoint'), 'Error: no checkpoint directory found!'
