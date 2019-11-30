@@ -21,7 +21,7 @@ transform_test = transforms.Compose([
 testset = torchvision.datasets.CIFAR100(root='./data', train=False, download=True, transform=transform_test)
 testloader = torch.utils.data.DataLoader(testset, batch_size=100, shuffle=True, num_workers=2)
 
-#Model download
+#Model download here
 net = myModels.MobileNetV2()
 net = net.to(device)
 print('==> Resuming from checkpoint..')
