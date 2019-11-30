@@ -46,20 +46,22 @@ for n_iter, (image, label) in enumerate(testloader):
         label = Variable(label).cuda()
         output = net(image)
         scores, pred = output.topk(5, 1, largest=True, sorted=True)
+        #scores shape: 100*5
         label = label.view(label.size(0), -1).expand_as(pred)
         correct = pred.eq(label).float()
         #compute top 5
         correct_5 += correct[:, :5].sum()
         #compute top1
         correct_1 += correct[:, :1].sum()
+        #correct[:,:1] shape: 100*1
         #record:
         res[n_iter] = [scores, correct[:, :1]]
-        print("score shape is ",scores.size())
-        print("correct1 shape is ",correct[:,:1].size())
+        #print("score shape is ",scores.size())
+        #print("correct1 shape is ",correct[:,:1].size())
 
-#file = open("scores", "wb")
-#pickle.dump(res, file)
-#file.close()
+file = open("scores", "wb")
+pickle.dump(res, file)
+file.close()
 
 print()
 print("Top 1 err: ", 1 - correct_1 / len(testloader.dataset))
