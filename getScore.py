@@ -53,11 +53,13 @@ for n_iter, (image, label) in enumerate(testloader):
         #compute top1
         correct_1 += correct[:, :1].sum()
         #record:
-        res[n_iter] = [scores, correct[:, :1].sum()]
+        res[n_iter] = [scores, correct[:, :1]]
+        print("score shape is ",scores.size())
+        print("correct1 shape is ",correct[:,:1].size())
 
-file = open("scores", "wb")
-pickle.dump(res, file)
-file.close()
+#file = open("scores", "wb")
+#pickle.dump(res, file)
+#file.close()
 
 print()
 print("Top 1 err: ", 1 - correct_1 / len(testloader.dataset))
