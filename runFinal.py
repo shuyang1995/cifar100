@@ -67,18 +67,23 @@ threshold = 0.10
 with torch.no_grad():
     for n_iter, (image, label) in enumerate(testloader):
             #print("iteration: {}\ttotal {} iterations".format(n_iter + 1, len(testloader)))
+            #if(n_iter>100):
+                #break
             image = Variable(image).to(device)
-            label = Variable(label).to(device)
             output = net(image)           
             score, pred = output.topk(1, 1, largest=True, sorted=True)
-            label = label.view(label.size(0), -1).expand_as(pred)
-            correct = pred.eq(label).float()
-            if(score>threshold):
+            if(score>threshold*100):
+                label = Variable(label).to(device)
+                label = label.view(label.size(0), -1).expand_as(pred)
+                correct = pred.eq(label).float()
                 correct_small += correct[:, :1].sum()
                 total_small += batch_size
             else:
-                predicted_x = model.predict(x_test[n_iter])
+            #if(True):
+                predicted_x = model.predict(x_test[n_iter:n_iter+1,:,:,:])
                 pred = np.argmax(predicted_x,1)
-                correct_big +=  sum(pred==label.cpu().numpy())
+                correct_big += sum(pred==y_test[n_iter:n_iter+1])
+                #correct_big += sum(pred==label.cpu().numpy())
                 total_big += batch_size
+print(time.time()-start_time)
 print("small model: {}/{} big model: {}/{}".format(correct_small, total_small, correct_big, total_big))
