@@ -2,6 +2,7 @@ import os
 import sys
 import time
 import math
+from torch.optim.lr_scheduler import _LRScheduler
 
 def format_time(seconds):
     days = int(seconds / 3600/24)
