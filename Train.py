@@ -108,9 +108,12 @@ def test(epoch):
     total = 0
     with torch.no_grad():
         for batch_idx, (inputs, targets) in enumerate(testloader):
-            inputs, targets = inputs.to(device), targets.to(device)
-            outputs = net(inputs)
-            loss = criterion(outputs, targets)
+            images = Variable(inputs)
+            labels = Variable(targets)
+            images = images.cuda()
+            labels = labels.cuda()
+            outputs = net(images)
+            loss = loss_function(outputs, labels)
             test_loss += loss.item()
             _, predicted = outputs.max(1)
             total += targets.size(0)
