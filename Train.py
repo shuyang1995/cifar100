@@ -8,6 +8,7 @@ from utils import progress_bar
 from utils import WarmUpLR
 import myModels
 import os
+from torch.autograd import Variable
 
 device = 'cuda' if torch.cuda.is_available() else 'cpu'
 best_acc = 0  # best test accuracy
