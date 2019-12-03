@@ -1,90 +1,95 @@
-import os
 import sys
-import time
-import math
+import numpy
+import torch
 from torch.optim.lr_scheduler import _LRScheduler
+import torchvision
+import torchvision.transforms as transforms
+from torch.utils.data import DataLoader
+#from dataset import CIFAR100Train, CIFAR100Test
 
-def format_time(seconds):
-    days = int(seconds / 3600/24)
-    seconds = seconds - days*3600*24
-    hours = int(seconds / 3600)
-    seconds = seconds - hours*3600
-    minutes = int(seconds / 60)
-    seconds = seconds - minutes*60
-    secondsf = int(seconds)
-    seconds = seconds - secondsf
-    millis = int(seconds*1000)
-    f = ''
-    i = 1
-    if days > 0:
-        f += str(days) + 'D'
-        i += 1
-    if hours > 0 and i <= 2:
-        f += str(hours) + 'h'
-        i += 1
-    if minutes > 0 and i <= 2:
-        f += str(minutes) + 'm'
-        i += 1
-    if secondsf > 0 and i <= 2:
-        f += str(secondsf) + 's'
-        i += 1
-    if millis > 0 and i <= 2:
-        f += str(millis) + 'ms'
-        i += 1
-    if f == '':
-        f = '0ms'
-    return f
+def get_network(args, use_gpu=True):
+    """ return given network
+    """
+    if args.net == 'vgg16':
+        from models.vgg import vgg16_bn
+        net = vgg16_bn()
 
-_, term_width = os.popen('stty size', 'r').read().split()
-term_width = int(term_width)
+    elif args.net == 'mobilenetv2':
+        from models.mobilenetv2 import mobilenetv2
+        net = mobilenetv2()
 
-TOTAL_BAR_LENGTH = 65.
-last_time = time.time()
-begin_time = last_time
-def progress_bar(current, total, msg=None):
-    global last_time, begin_time
-    if current == 0:
-        begin_time = time.time()  # Reset for new bar.
-
-    cur_len = int(TOTAL_BAR_LENGTH*current/total)
-    rest_len = int(TOTAL_BAR_LENGTH - cur_len) - 1
-
-    sys.stdout.write(' [')
-    for i in range(cur_len):
-        sys.stdout.write('=')
-    sys.stdout.write('>')
-    for i in range(rest_len):
-        sys.stdout.write('.')
-    sys.stdout.write(']')
-
-    cur_time = time.time()
-    step_time = cur_time - last_time
-    last_time = cur_time
-    tot_time = cur_time - begin_time
-
-    L = []
-    L.append('  Step: %s' % format_time(step_time))
-    L.append(' | Tot: %s' % format_time(tot_time))
-
-    if msg:
-        L.append(' | ' + msg)
-
-    msg = ''.join(L)
-    sys.stdout.write(msg)
-    for i in range(term_width-int(TOTAL_BAR_LENGTH)-len(msg)-3):
-        sys.stdout.write(' ')
-
-    # Go back to the center of the bar.
-    for i in range(term_width-int(TOTAL_BAR_LENGTH/2)+2):
-        sys.stdout.write('\b')
-    sys.stdout.write(' %d/%d ' % (current+1, total))
-
-    if current < total-1:
-        sys.stdout.write('\r')
     else:
-        sys.stdout.write('\n')
+        print('the network name you have entered is not supported yet')
+        sys.exit()
+    if use_gpu:
+        net = net.cuda()
+    return net
 
-    sys.stdout.flush()
+def get_training_dataloader(mean, std, batch_size=16, num_workers=2, shuffle=True):
+
+    """ return training dataloader
+    Args:
+        mean: mean of cifar100 training dataset
+        std: std of cifar100 training dataset
+        path: path to cifar100 training python dataset
+        batch_size: dataloader batchsize
+        num_workers: dataloader num_works
+        shuffle: whether to shuffle
+    Returns: train_data_loader:torch dataloader object
+    """
+
+    transform_train = transforms.Compose([
+        #transforms.ToPILImage(),
+        transforms.RandomCrop(32, padding=4),
+        transforms.RandomHorizontalFlip(),
+        transforms.RandomRotation(15),
+        transforms.ToTensor(),
+        transforms.Normalize(mean, std)
+    ])
+
+    #cifar100_training = CIFAR100Train(path, transform=transform_train)
+    cifar100_training = torchvision.datasets.CIFAR100(root='./data', train=True, download=True, transform=transform_train)
+    cifar100_training_loader = DataLoader(
+        cifar100_training, shuffle=shuffle, num_workers=num_workers, batch_size=batch_size)
+    return cifar100_training_loader
+
+def get_test_dataloader(mean, std, batch_size=16, num_workers=2, shuffle=True):
+    """ return training dataloader
+    Args:
+        mean: mean of cifar100 test dataset
+        std: std of cifar100 test dataset
+        path: path to cifar100 test python dataset
+        batch_size: dataloader batchsize
+        num_workers: dataloader num_works
+        shuffle: whether to shuffle
+    Returns: cifar100_test_loader:torch dataloader object
+    """
+    transform_test = transforms.Compose([
+        transforms.ToTensor(),
+        transforms.Normalize(mean, std)
+    ])
+    #cifar100_test = CIFAR100Test(path, transform=transform_test)
+    cifar100_test = torchvision.datasets.CIFAR100(root='./data', train=False, download=True, transform=transform_test)
+    cifar100_test_loader = DataLoader(
+        cifar100_test, shuffle=shuffle, num_workers=num_workers, batch_size=batch_size)
+    return cifar100_test_loader
+
+def compute_mean_std(cifar100_dataset):
+    """compute the mean and std of cifar100 dataset
+    Args:
+        cifar100_training_dataset or cifar100_test_dataset
+        witch derived from class torch.utils.data
+    Returns:
+        a tuple contains mean, std value of entire dataset
+    """
+    data_r = numpy.dstack([cifar100_dataset[i][1][:, :, 0] for i in range(len(cifar100_dataset))])
+    data_g = numpy.dstack([cifar100_dataset[i][1][:, :, 1] for i in range(len(cifar100_dataset))])
+    data_b = numpy.dstack([cifar100_dataset[i][1][:, :, 2] for i in range(len(cifar100_dataset))])
+    mean = numpy.mean(data_r), numpy.mean(data_g), numpy.mean(data_b)
+    std = numpy.std(data_r), numpy.std(data_g), numpy.std(data_b)
+    return mean, std
+
+
 
 class WarmUpLR(_LRScheduler):
     """warmup_training learning rate scheduler
