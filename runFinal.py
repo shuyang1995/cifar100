@@ -1,89 +1,82 @@
-# -*- coding: utf-8 -*-
-"""
-Created on Sun Dec  1 16:38:09 2019
-
-@author: Zhihan Chen
-"""
-import numpy as np
-import torch
-import torchvision
-import torchvision.transforms as transforms
-import torchvision.models as models
-import torch.nn as nn
-import myModels
-from torch.autograd import Variable
-from utils import progress_bar
-from keras.datasets import cifar100
-
+import argparse
 import os
 import time
 
-from risk_control import risk_control
+from conf import settings
+from utils import get_network, get_test_dataloader
+import torch
+import torchvision.transforms as transforms
+from torch.utils.data import DataLoader
+from torch.autograd import Variable
+
+from models import *
 
 
-device = 'cuda' if torch.cuda.is_available() else 'cpu'
+parser = argparse.ArgumentParser(description='2-stage classification model on cifar100')
+parser.add_argument('--small', default='mobilenetv2', type=str,  help='small model name under models/')
+parser.add_argument('--large', default='seresnet50', type=str,  help='large model name under models/')
+parser.add_argument('--small_path', '--sp', default='mobilenetv2', type=str,  help='small model path')
+parser.add_argument('--large_path', '--lp', default='mobilenetv2', type=str,  help='large model path')
+parser.add_argument('-gpu', type=bool, default=True, help='use gpu or not')
+parser.add_argument('-w', type=int, default=2, help='number of workers for dataloader')
+parser.add_argument('-b', type=int, default=1, help='batch size for dataloader')
+parser.add_argument('-s', type=bool, default=False, help='whether shuffle the dataset')
+args = parser.parse_args()
 
-#confidence prob
-delta = 0.001
-batch_size = 1
-#loaddata -- cifar100 - testData
-print('==> Preparing data..')
-
-transform_test = transforms.Compose([
-    transforms.ToTensor(),
-    transforms.Normalize((0.485, 0.456, 0.406), (0.229, 0.224, 0.225)),
-])
-testset = torchvision.datasets.CIFAR100(root='./data', train=False, download=True, transform=transform_test)
-testloader = torch.utils.data.DataLoader(testset, batch_size=batch_size, shuffle=False, num_workers=2)
-
-#load data for big model
-(_, _), (x_test, y_test) = cifar100.load_data()
-x_test = x_test.astype('float32')
-    
-#Model download here
-net = myModels.MobileNetV2()
-net = net.to(device)
-print('==> Resuming from checkpoint..')
-assert os.path.isdir('checkpoint'), 'Error: no checkpoint directory found!'
-checkpoint = torch.load('./checkpoint/ckpt.pth')
-net.load_state_dict(checkpoint['net'])
-best_acc = checkpoint['acc']
-start_epoch = checkpoint['epoch']
-
-#print(net)
-#eval:
-net.eval()
-correct_small = 0.0
-total_small = 0
-correct_big = 0.0
-total_big = 0
-model=myModels.cifar100vgg(train=False)
-res = {}
-kappa= np.array([])
-residuals=np.array([])
-
+from models import mobilenetv2 as small_net
+from models import seresnet50 as large_net
 start_time=time.time()
-threshold = 0.10
-with torch.no_grad():
-    for n_iter, (image, label) in enumerate(testloader):
+
+def main():
+    snet = small_net()
+    lnet = large_net()
+    test_loader = get_test_dataloader(
+        settings.CIFAR100_TRAIN_MEAN,
+        settings.CIFAR100_TRAIN_STD,
+        num_workers=args.w,
+        batch_size=args.b,
+        shuffle=args.s
+    )
+
+    snet.load_state_dict(torch.load(args.small_path), args.gpu)
+    print(snet)
+    snet.eval()
+    lnet.load_state_dict(torch.load(args.large_path), args.gpu)
+    print(lnet)
+    lnet.eval()
+    
+    correct_1_small = 0.0
+    correct_5_small = 0.0
+    correct_1_large = 0.0
+    correct_5_large = 0.0
+    threshold = 0.10
+    total_small = 0
+    total_large = 0
+    
+    device = 'cuda' if torch.cuda.is_available() else 'cpu'
+    with torch.no_grad():
+        for n_iter, (image, label) in enumerate(test_loader):
             #print("iteration: {}\ttotal {} iterations".format(n_iter + 1, len(testloader)))
-            #if(n_iter>100):
-                #break
             image = Variable(image).to(device)
-            output = net(image)           
+            label = Variable(label).to(device)
+            output = snet(image)           
             score, pred = output.topk(1, 1, largest=True, sorted=True)
+            label = label.view(label.size(0), -1).expand_as(pred)
+            correct = pred.eq(label).float()
             if(score>threshold*100):
-                label = Variable(label).to(device)
+                correct_1_small += correct[:, :1].sum()
+                total_small += args.b
+            else:
+                output = lnet(image)
+                _, pred = output.topk(1, 1, largest=True, sorted=True)
                 label = label.view(label.size(0), -1).expand_as(pred)
                 correct = pred.eq(label).float()
-                correct_small += correct[:, :1].sum()
-                total_small += batch_size
-            else:
-            #if(True):
-                predicted_x = model.predict(x_test[n_iter:n_iter+1,:,:,:])
-                pred = np.argmax(predicted_x,1)
-                correct_big += sum(pred==y_test[n_iter:n_iter+1])
-                #correct_big += sum(pred==label.cpu().numpy())
-                total_big += batch_size
-print(time.time()-start_time)
-print("small model: {}/{} big model: {}/{}".format(correct_small, total_small, correct_big, total_big))
+                correct_1_large += correct[:, :1].sum()
+                total_large += args.b
+    print("Top1 acc: small model: {}/{} big model: {}/{}".format(correct_1_small, total_small, correct_1_large, total_large))
+    print("Top5 acc: small model: {}/{} big model: {}/{}".format(correct_1_small, total_small, correct_1_large, total_large))
+
+
+if __name__=='__main__':
+    main()
+
